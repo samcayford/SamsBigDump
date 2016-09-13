@@ -2,26 +2,40 @@
 <project name="DbTasks" basedir=".">
 	<description>SCORM Engine Java</description>
 
+
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties"/>
+
 	<!-- Load property files -->
+
+	<property environment="env"/>
 	<property file="build.properties"/>
   
+  	<!-- pass through tasks to ScormEngine build file -->
+	<target name="deployallwars">
+		<ant antfile="${env.SCORMENGINE_HOME}/java/build.xml" target="deployallwars" inheritAll="false" inheritRefs="false"/>
+	</target>
+	<target name="clean">
+		<ant antfile="${env.SCORMENGINE_HOME}/java/build.xml" target="clean" inheritAll="false" inheritRefs="false"/>
+	</target>
+
 	<!-- clean db targets -->
 	<target name="clean-mysql">
+
 	<!-- mysql -u [username] -p[password] -e 'drop database db-name;'-->
 		<exec executable="mysqladmin">
-			<arg line="-u${mysql.root.user}"/>
-			<arg line="-p${mysql.root.password}"/>
+			<arg line="-u${env.MYSQL_USER}"/>
+			<arg line="-p${env.MYSQL_PASSWORD}"/>
 			<arg line="-f"/>
 			<arg line="drop ${engine.db.name}"/>
 		</exec>
 		<exec executable="mysqladmin">
-			<arg line="-u${mysql.root.user}"/>
-			<arg line="-p${mysql.root.password}"/>
+			<arg line="-u${env.MYSQL_USER}"/>
+			<arg line="-p${env.MYSQL_PASSWORD}"/>
 			<arg line="create ${engine.db.name}"/>
 		</exec>
 		<antcall target="create-database-tables">
 			<param name="database" value="mysql"/>
-			<param name="url" value="${mysql.jdbc.url}?user=${mysql.root.user}&amp;password=${mysql.root.password}"/>
+			<param name="url" value="${mysql.jdbc.url}?user=${env.MYSQL_USER}&amp;password=${env.MYSQL_PASSWORD}"/>
 			<param name="driver" value="${mysql.driver}"/>
 		</antcall>
 	</target>
@@ -52,15 +66,74 @@
 		<echo>Database: ${database}</echo>
 		<echo>URL: ${url}</echo>
 		<echo>Driver: ${driver}</echo>
+		<echo>Classpath: ${env.SCORMENGINE_HOME}java/build/jar/*;./*</echo>
 		<!--echo>User: ${user}</echo>
 		<echo>Password: ${password}</echo-->
 		<exec executable="java">
-			<arg line="-cp ${engine.tomcat.webinf.lib}/*;./*"/>
+			<arg line="-cp ${env.SCORMENGINE_HOME}/java/build/jar/*${env.PATH_SEP}./*${env.PATH_SEP}${env.SCORMENGINE_HOME}/java/RusticiSoftware.ScormContentPlayer.Logic/lib/*"/>
 			<arg line="-Dlogback.configurationFile=logback.xml"/>
 			<arg line="RusticiSoftware.ScormContentPlayer.Logic.Upgrade.ConsoleApp"/>
 			<arg line="${database}"/>
 			<arg line="${url}|${driver}"/>
 		</exec>
+	</target>
+
+	<!-- tomcat -->
+	<path id="tomcat.class.path">
+    	<fileset dir="${env.CATALINA_HOME}/lib">
+        	<include name="**/*.jar"/>
+        	<include name="**/*.zip"/>
+    	</fileset>
+    	<pathelement location="${env.CATALINA_HOME}/bin/bootstrap.jar"/>
+    	<pathelement location="${env.CATALINA_HOME}/bin/tomcat-juli.jar"/>
+	</path>
+
+
+	<target name="check-tomcat-port" description="Check whether Tomcat is running">
+    	<echo message="Checking whether Tomcat is running"/>
+    	<condition property="tomcat.running">
+      		<socket server="localhost" port="${env.TOMCAT_PORT}"/> 
+    	</condition>
+	</target>
+
+	<target name="start-tomcat" depends="check-tomcat-port">
+		<echo>${tomcat.running}</echo>
+		<if> 
+			<not>
+				<equals arg1="${tomcat.running}" arg2="$${tomcat.running}" />
+			</not> 
+			<then> 
+				<echo message="Tomcat already started" />
+			</then>
+			<else> 
+				<java classname="org.apache.catalina.startup.Bootstrap" fork="true" spawn="true"
+        			classpathref="tomcat.class.path">
+        			<jvmarg value="-Dcatalina.home=${env.CATALINA_HOME}"/>
+    			</java>
+			</else> 
+		</if>
+		
+    	<!--java jar="${env.CATALINA_HOME}/bin/bootstrap.jar" fork="true">
+        	<jvmarg value="-Dcatalina.home=${env.CATALINA_HOME}"/>
+    	</java-->
+	</target>
+ 
+	<target name="stop-tomcat" depends="check-tomcat-port">
+		<if> 
+			<not>
+				<equals arg1="${tomcat.running}" arg2="$${tomcat.running}" />
+			</not> 
+			<then> 
+				<java classname="org.apache.catalina.startup.Bootstrap" fork="true" spawn="true"
+        			classpathref="tomcat.class.path">
+        			<jvmarg value="-Dcatalina.home=${env.CATALINA_HOME}"/>
+        			<arg line="stop"/>
+    			</java>
+			</then>
+			<else> 
+				<echo message="Tomcat not running"/>
+			</else> 
+		</if>	
 	</target>
 
 </project>
