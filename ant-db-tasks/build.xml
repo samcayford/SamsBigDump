@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<project name="DbTasks" basedir=".">
+	<description>SCORM Engine Java</description>
+
+	<!-- Load property files -->
+	<property file="build.properties"/>
+  
+	<!-- clean db targets -->
+	<target name="clean-mysql">
+	<!-- mysql -u [username] -p[password] -e 'drop database db-name;'-->
+		<exec executable="mysqladmin">
+			<arg line="-u${mysql.root.user}"/>
+			<arg line="-p${mysql.root.password}"/>
+			<arg line="-f"/>
+			<arg line="drop ${engine.db.name}"/>
+		</exec>
+		<exec executable="mysqladmin">
+			<arg line="-u${mysql.root.user}"/>
+			<arg line="-p${mysql.root.password}"/>
+			<arg line="create ${engine.db.name}"/>
+		</exec>
+		<antcall target="create-database-tables">
+			<param name="database" value="mysql"/>
+			<param name="url" value="${mysql.jdbc.url}?user=${mysql.root.user}&amp;password=${mysql.root.password}"/>
+			<param name="driver" value="${mysql.driver}"/>
+		</antcall>
+	</target>
+	
+	<target name="clean-sqlserver">
+		<sql
+			driver="${sqlserver.driver}"
+			url="${sqlserver.admin.url}"
+			userid="${sqlserver.user}"
+			password="${sqlserver.password}">
+		IF EXISTS(SELECT * FROM SYS.DATABASES WHERE NAME='ScormEngine')
+			DROP DATABASE ScormEngine;
+		
+		create database ScormEngine;
+		</sql>
+	
+		<antcall target="create-database-tables">
+			<param name="database" value="sqlserver"/>
+			<param name="url" value="${sqlserver.jdbc.url}"/>
+			<param name="driver" value="${sqlserver.driver}"/>
+		</antcall>
+	</target>
+	<target name="clean-oracle-db">
+	<echo>${db}</echo>
+	</target>
+	
+	<target name="create-database-tables">
+		<echo>Database: ${database}</echo>
+		<echo>URL: ${url}</echo>
+		<echo>Driver: ${driver}</echo>
+		<!--echo>User: ${user}</echo>
+		<echo>Password: ${password}</echo-->
+		<exec executable="java">
+			<arg line="-cp ${engine.tomcat.webinf.lib}/*;./*"/>
+			<arg line="-Dlogback.configurationFile=logback.xml"/>
+			<arg line="RusticiSoftware.ScormContentPlayer.Logic.Upgrade.ConsoleApp"/>
+			<arg line="${database}"/>
+			<arg line="${url}|${driver}"/>
+		</exec>
+	</target>
+
+</project>
