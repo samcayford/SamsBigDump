@@ -1,0 +1,99 @@
+<project name="Database" basedir=".">
+	<description>Tasks for managing databases</description>
+  
+  <target name="install-mysql-dist">
+    <!--delete dir="${INSTALL_DIR}/${MYSQL_RELEASE}" failonerror="false"/>
+    <unzip src="binaries/${MYSQL_RELEASE}.zip" dest="${INSTALL_DIR}"/-->
+    <mkdir dir="${INSTALL_DIR}/${MYSQL_RELEASE}/data"/>
+    <exec executable="${INSTALL_DIR}/${MYSQL_RELEASE}/bin/mysqld">
+      <arg value="--initialize-insecure"/>
+    </exec> 
+  </target>
+  
+  <target name="start-mysql">
+    <exec executable="${INSTALL_DIR}/${MYSQL_RELEASE}/bin/mysqld" spawn="true">
+      <arg value="--console"/>
+    </exec>
+  </target>
+  <target name="stop-mysql">
+    <exec executable="${INSTALL_DIR}/${MYSQL_RELEASE}/bin/mysqladmin" spawn="true">
+      <arg value="-u${MYSQL_USER}"/>
+      <arg value="shutdown"/>
+    </exec>
+  </target>
+  <!-- clean db targets -->
+	<target name="clean-mysql">
+
+	<!-- mysql -u [username] -p[password] -e 'drop database db-name;'-->
+		<exec executable="${INSTALL_DIR}/${MYSQL_RELEASE}/bin/mysqladmin">
+			<arg line="-u${MYSQL_USER}"/>
+			<!--arg line="-p${MYSQL_PASSWORD}"/-->
+			<arg line="-f"/>
+			<arg line="drop ${engine.db.name}"/>
+		</exec>
+		<exec executable="${INSTALL_DIR}/${MYSQL_RELEASE}/bin/mysqladmin">
+			<arg line="-u${MYSQL_USER}"/>
+			<!--arg line="-p${MYSQL_PASSWORD}"/-->
+			<arg line="create ${engine.db.name}"/>
+		</exec>
+		<antcall target="create-database-tables">
+			<param name="database" value="mysql"/>
+			<param name="url" value="${MYSQL_URL}?user=${MYSQL_USER}"/>
+			<param name="driver" value="${mysql.driver}"/>
+		</antcall>
+	</target>
+	
+	<target name="clean-sqlserver">
+		<sql
+			driver="${sqlserver.driver}"
+			url="${sqlserver.admin.url}"
+			userid="${sqlserver.user}"
+			password="${sqlserver.password}">
+		IF EXISTS(SELECT * FROM SYS.DATABASES WHERE NAME='ScormEngine')
+			DROP DATABASE ScormEngine;
+		
+		create database ScormEngine;
+		</sql>
+	
+		<antcall target="create-database-tables">
+			<param name="database" value="sqlserver"/>
+			<param name="url" value="${sqlserver.jdbc.url}"/>
+			<param name="driver" value="${sqlserver.driver}"/>
+		</antcall>
+	</target>
+	<target name="clean-oracle-db">
+	<echo>${db}</echo>
+	</target>
+	
+  <path id="upgrade.tool.classpath">
+    <multirootfileset basedirs="${env.SCORMENGINE_HOME}/java,db-drivers">
+      <include name="Builds/jar/*.jar"/>
+        <include name="*.jar"/>
+        <include name="RusticiSoftware.ScormContentPlayer.Logic/lib/*.jar"/>
+        <include name="Interface/WebContent/WEB-INF/lib/*.jar"/>    
+
+    </multirootfileset>
+  </path>
+  
+	<target name="create-database-tables">
+		<echo>Database: ${database}</echo>
+		<echo>URL: ${url}</echo>
+		<echo>Driver: ${driver}</echo>
+		<echo>Classpath: ${env.SCORMENGINE_HOME}java/build/jar/*;./*</echo>
+		<!--echo>User: ${user}</echo>
+		<echo>Password: ${password}</echo-->
+    <java classname="RusticiSoftware.ScormContentPlayer.Logic.Upgrade.ConsoleApp">
+      <jvmarg value="-Dlogback.configurationFile=logback.xml"/>
+      <classpath refid="upgrade.tool.classpath"/>
+      <arg value="${database}"/>
+			<arg value="${url}|${driver}"/>
+    </java>
+		<!--exec executable="java">
+			<arg line="-cp ${env.SCORMENGINE_HOME}/java/Builds/jar/*${env.PATH_SEP}db-drivers/*${env.PATH_SEP}${env.SCORMENGINE_HOME}/java/RusticiSoftware.ScormContentPlayer.Logic/lib/*${env.PATH_SEP}${env.SCORMENGINE_HOME}/java/Interface/WebContent/WEB-INF/lib/*"/>
+			<arg line="-Dlogback.configurationFile=logback.xml"/>
+			<arg line="RusticiSoftware.ScormContentPlayer.Logic.Upgrade.ConsoleApp"/>
+			<arg line="${database}"/>
+			<arg line="${url}|${driver}"/>
+		</exec-->
+	</target>
+</project>

@@ -1,0 +1,109 @@
+<project name="Tomcat" basedir=".">
+	<description>Tasks for managing Tomcat</description>
+  
+  
+  
+  <taskdef resource="net/sf/antcontrib/antcontrib.properties"/>
+  
+  <target name="install-tomcat-dist">
+    <delete dir="${INSTALL_DIR}/${TOMCAT_RELEASE}" failonerror="false"/>
+    <unzip src="binaries/${TOMCAT_RELEASE}.zip" dest="${INSTALL_DIR}"/>
+  </target>
+  
+  <!-- Tomcat tasks -->
+	<path id="tomcat.class.path">
+    	<fileset dir="${INSTALL_DIR}/${TOMCAT_RELEASE}/lib">
+        	<include name="**/*.jar"/>
+        	<include name="**/*.zip"/>
+    	</fileset>
+    	<pathelement location="${INSTALL_DIR}/${TOMCAT_RELEASE}/bin/bootstrap.jar"/>
+    	<pathelement location="${INSTALL_DIR}/${TOMCAT_RELEASE}/bin/tomcat-juli.jar"/>
+	</path>
+
+  <target name="configure-tomcat-mysql">
+    <antcall target="configure-tomcat">
+      <param name="database" value="mysql"/>
+      <param name="db.url" value="${MYSQL_URL}"/>
+      <param name="db.user" value="${MYSQL_USER}"/>
+      <param name="db.pass" value="${MYSQL_PASSWORD}"/>
+    </antcall>
+  </target>
+  
+  <target name="configure-tomcat">
+    <echo>Configuring Tomcat for ${database}</echo>
+    <input
+      message="Any manual changes to Tomcat conf and settings files will be overwritten. Continue? (y/n)"
+      validargs="y,n"
+      addproperty="do.configure"
+    />
+    <if> 
+			<equals arg1="${do.configure}" arg2="y"/>
+			<then> 
+				<delete file="${INSTALL_DIR}/${TOMCAT_RELEASE}/conf/context.xml"/>
+        <delete file="${INSTALL_DIR}/${TOMCAT_RELEASE}/lib/SCORMEngineSettings.properties"/>
+        <loadfile property="dbresourcetag"
+          srcFile="templates/tomcat/${database}.context.xml.snippet"/>
+        <copy file="templates/tomcat/context.xml" tofile="${INSTALL_DIR}/${TOMCAT_RELEASE}/conf/context.xml"/>
+        <replace file="${INSTALL_DIR}/${TOMCAT_RELEASE}/conf/context.xml" token="@@ScormEngineDBResourse@@" value="${dbresourcetag}"/>
+        <replace file="${INSTALL_DIR}/${TOMCAT_RELEASE}/conf/context.xml" token="@@db.username@@" value="${db.user}"/>
+        <replace file="${INSTALL_DIR}/${TOMCAT_RELEASE}/conf/context.xml" token="@@db.password@@" value="${db.pass}"/>
+        <replace file="${INSTALL_DIR}/${TOMCAT_RELEASE}/conf/context.xml" token="@@db.url@@" value="${db.url}"/>
+    
+        <copy file="templates/tomcat/SCORMEngineSettings.properties" tofile="${INSTALL_DIR}/${TOMCAT_RELEASE}/lib/SCORMEngineSettings.properties"/>
+        <replace file="${INSTALL_DIR}/${TOMCAT_RELEASE}/lib/SCORMEngineSettings.properties" token="@@database@@" value="${database}"/>
+			</then>
+			<else> 
+				<echo message="Aborted" />
+			</else> 
+		</if>
+    <copy todir="${INSTALL_DIR}/${TOMCAT_RELEASE}/lib">
+      <fileset dir="db-drivers">
+        <include name="**/*.jar"/>
+      </fileset>
+    </copy>
+  </target>
+  
+	<target name="check-tomcat-port" description="Check whether Tomcat is running">
+    	<echo message="Checking whether Tomcat is running"/>
+    	<condition property="tomcat.running">
+      		<socket server="localhost" port="${TOMCAT_PORT}"/> 
+    	</condition>
+	</target>
+
+	<target name="start-tomcat" depends="check-tomcat-port">
+		<echo>${tomcat.running}</echo>
+		<if> 
+			<not>
+				<equals arg1="${tomcat.running}" arg2="$${tomcat.running}" />
+			</not> 
+			<then> 
+				<echo message="Tomcat already started" />
+			</then>
+			<else> 
+				<java classname="org.apache.catalina.startup.Bootstrap" fork="true" spawn="true"
+        			classpathref="tomcat.class.path">
+        			<jvmarg value="-Dcatalina.home=${INSTALL_DIR}/${TOMCAT_RELEASE}"/>
+    			</java>
+			</else> 
+		</if>
+	</target>
+ 
+	<target name="stop-tomcat" depends="check-tomcat-port">
+		<if> 
+			<not>
+				<equals arg1="${tomcat.running}" arg2="$${tomcat.running}" />
+			</not> 
+			<then> 
+				<java classname="org.apache.catalina.startup.Bootstrap" fork="true" spawn="true"
+        			classpathref="tomcat.class.path">
+        			<jvmarg value="-Dcatalina.home=${INSTALL_DIR}/${TOMCAT_RELEASE}"/>
+        			<arg line="stop"/>
+    			</java>
+			</then>
+			<else> 
+				<echo message="Tomcat not running"/>
+			</else> 
+		</if>	
+	</target>
+
+</project>

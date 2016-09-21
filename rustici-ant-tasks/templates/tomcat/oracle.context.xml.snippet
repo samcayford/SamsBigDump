@@ -1,0 +1,12 @@
+<Resource name="jdbc/ScormEngineDB" auth="Container"
+  type="javax.sql.DataSource" 
+  description="Oracle database for ScormEngine" 
+  username= "@@db.username@@" 
+  password= "@@db.password@@"
+  driverClassName="oracle.jdbc.OracleDriver" 
+  url="@@db.url@@"
+  maxActive="30"
+  maxIdle="0" 
+  maxWait="10000"
+/>
+jdbc:oracle:thin:@localhost:1521:ORCL

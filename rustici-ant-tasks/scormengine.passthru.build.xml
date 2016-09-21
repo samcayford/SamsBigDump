@@ -1,0 +1,20 @@
+<project name="Engine Passthru" basedir=".">
+	<description>SCORM Engine passthru tasks</description>
+
+  <target name="set-build-properties">
+    <echo>${converted.basedir}</echo>
+    <delete file="${SCORMENGINE_HOME}/java/build.properties"/>
+        
+    <copy file="templates/engine/build.properties" tofile="${SCORMENGINE_HOME}/java/build.properties"/>
+    <replace file="${SCORMENGINE_HOME}/java/build.properties" token="@@engine.home@@" value="${SCORMENGINE_HOME}"/>
+    <replace file="${SCORMENGINE_HOME}/java/build.properties" token="@@tomcat.deploy.dir@@" value="${converted.basedir}/${INSTALL_DIR}/${TOMCAT_RELEASE}/webapps"/>
+  </target>
+  
+  <!-- pass through tasks to ScormEngine build file -->
+	<target name="java-deploy">
+		<ant antfile="${SCORMENGINE_HOME}/java/build.xml" target="deployallwars" inheritAll="false" inheritRefs="false"/>
+	</target>
+	<target name="java-clean">
+		<ant antfile="${SCORMENGINE_HOME}/java/build.xml" target="clean" inheritAll="false" inheritRefs="false"/>
+	</target>
+</project>

@@ -1,0 +1,11 @@
+<Resource name="jdbc/ScormEngineDB" auth="Container" type="javax.sql.DataSource"
+  username="@@db.username@@"
+  password="@@db.password@@"
+  driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+  url="@@db.url@@" 
+  maxActive="50"
+  maxIdle="10"
+  maxWait="15000"
+/>
+
+jdbc:sqlserver://localhost:1433;instanceName=SQLEXPRESS;databaseName=ScormEngine

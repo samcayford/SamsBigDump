@@ -1,0 +1,8 @@
+<project name="IIS" basedir=".">
+	<description>Tasks for managing IIS</description>
+  
+  <target name="iis-restart">
+    <exec executable="iisreset"/>
+  </target>
+  
+</project>
