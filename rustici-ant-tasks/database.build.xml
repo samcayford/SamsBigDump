@@ -39,26 +39,38 @@
 		<antcall target="create-database-tables">
 			<param name="database" value="mysql"/>
 			<param name="url" value="${MYSQL_URL}?user=${MYSQL_USER}"/>
-			<param name="driver" value="${mysql.driver}"/>
+			<param name="driver" value="${MYSQL_DRIVER}"/>
 		</antcall>
 	</target>
 	
 	<target name="clean-sqlserver">
-		<sql
-			driver="${sqlserver.driver}"
-			url="${sqlserver.admin.url}"
+		<!--sql
+			driver="${SQLSERVER_DRIVER}"
+			url="${SQLSERVER_ADMIN}"
 			userid="${sqlserver.user}"
 			password="${sqlserver.password}">
 		IF EXISTS(SELECT * FROM SYS.DATABASES WHERE NAME='ScormEngine')
 			DROP DATABASE ScormEngine;
 		
 		create database ScormEngine;
-		</sql>
+		</sql-->
+    <exec executable="sqlcmd">
+      <arg line="-S"/>
+      <arg line=".\SQLEXPRESS"/>
+      <arg line="-q"/>
+      <arg line='"drop database ${engine.db.name};"'/>
+    </exec>
+    <exec executable="sqlcmd">
+      <arg line="-S"/>
+      <arg line=".\SQLEXPRESS"/>
+      <arg line="-q"/>
+      <arg line='"create database ${engine.db.name};"'/>
+    </exec>
 	
 		<antcall target="create-database-tables">
 			<param name="database" value="sqlserver"/>
-			<param name="url" value="${sqlserver.jdbc.url}"/>
-			<param name="driver" value="${sqlserver.driver}"/>
+			<param name="url" value="${SQLSERVER_URL}"/>
+			<param name="driver" value="${SQLSERVER_DRIVER}"/>
 		</antcall>
 	</target>
 	<target name="clean-oracle-db">
@@ -66,7 +78,7 @@
 	</target>
 	
   <path id="upgrade.tool.classpath">
-    <multirootfileset basedirs="${env.SCORMENGINE_HOME}/java,db-drivers">
+    <multirootfileset basedirs="${SCORMENGINE_HOME}/java,db-drivers">
       <include name="Builds/jar/*.jar"/>
         <include name="*.jar"/>
         <include name="RusticiSoftware.ScormContentPlayer.Logic/lib/*.jar"/>
@@ -79,7 +91,6 @@
 		<echo>Database: ${database}</echo>
 		<echo>URL: ${url}</echo>
 		<echo>Driver: ${driver}</echo>
-		<echo>Classpath: ${env.SCORMENGINE_HOME}java/build/jar/*;./*</echo>
 		<!--echo>User: ${user}</echo>
 		<echo>Password: ${password}</echo-->
     <java classname="RusticiSoftware.ScormContentPlayer.Logic.Upgrade.ConsoleApp">

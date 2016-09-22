@@ -1,3 +1,12 @@
-Unzip Ant distribution somewhere ($ANT_HOME).
-Copy jars from ant-lib to $ANT_HOME/lib.
-Modify env.bat or env.sh with your values.
+Add path to <ant_folder>/bin to your path
+
+Run commands........
+
+ant install-tomcat-dist
+ant install-mysql-dist
+ant configure-tomcat-mysql
+ant configure-tomcat-sqlserver
+
+ant java-clean
+ant java-deploy
+

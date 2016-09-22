@@ -87,6 +87,25 @@
 			</else> 
 		</if>
 	</target>
+  <target name="start-tomcat-debug" depends="check-tomcat-port">
+		<echo>${tomcat.running}</echo>
+		<if> 
+			<not>
+				<equals arg1="${tomcat.running}" arg2="$${tomcat.running}" />
+			</not> 
+			<then> 
+				<echo message="Tomcat already started" />
+			</then>
+			<else> 
+				<java classname="org.apache.catalina.startup.Bootstrap" fork="true" spawn="true"
+        			classpathref="tomcat.class.path">
+        			<jvmarg value="-Dcatalina.home=${INSTALL_DIR}/${TOMCAT_RELEASE}"/>
+              <jvmarg value="-Xdebug"/>
+              <jvmarg value="-Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n"/>
+    			</java>
+			</else> 
+		</if>
+	</target>
  
 	<target name="stop-tomcat" depends="check-tomcat-port">
 		<if> 
