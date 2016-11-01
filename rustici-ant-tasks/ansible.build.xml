@@ -1,0 +1,62 @@
+<project name="Engine Passthru" basedir=".">
+	<description>SCORM Engine ansible tasks</description>
+
+  	<target name="package-api-tests">
+  		<delete file="${ANSIBLE_HOME}/roles/mocha-api/files/APITests.zip"/>
+  		<zip destfile="${ANSIBLE_HOME}/roles/mocha-api/files/APITests.zip" basedir="${SCORMENGINE_HOME}/Tests" includes="api/**" excludes="**/node_modules/**"/>
+  	</target>
+
+	<target name="java-ansible-deploy" depends="java-deploy">
+		<delete file="${ANSIBLE_HOME}/roles/java-scorm-engine/files/ScormEngineInterface.war"/>
+		<copy file="${converted.basedir}/${INSTALL_DIR}/${TOMCAT_RELEASE}/webapps/ScormEngineInterface.war" tofile="${ANSIBLE_HOME}/roles/java-scorm-engine/files/ScormEngineInterface.war"/>
+		<antcall target="run-ansible-playbook">
+			<param name="playbook" value="java-scorm-engine.yml"/>
+		</antcall>
+	</target>
+
+	<target name="ansible-mocha-tests" depends="package-api-tests">
+		<delete dir="${ANSIBLE_HOME}/artifacts"/>
+		<mkdir dir="${ANSIBLE_HOME}/artifacts"/>
+		<antcall target="run-ansible-playbook">
+			<param name="playbook" value="mocha-api.yml"/>
+		</antcall>
+		<unzip src="${ANSIBLE_HOME}/artifacts/ApiTestsResults.zip" dest="${ANSIBLE_HOME}/artifacts"/>
+		<loadfile property="summary" srcFile="${ANSIBLE_HOME}/artifacts/var/log/development/summary.log"/>
+		<echo>${summary}</echo>
+	</target>
+	<target name="run-ansible-playbook">
+		<exec dir="${ANSIBLE_HOME}" executable="ansible-playbook">
+    		<arg value="--private-key=.vagrant/machines/engine/parallels/private_key"/>
+    		<arg value="--user=vagrant"/>
+    		<arg value="--connection=ssh"/>
+    		<arg value="--inventory-file=.vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory"/>
+    		<arg value="--extra-vars=@host_vars/engine.example.com.yml"/>
+    		<arg value="${playbook}"/>
+  		</exec>
+	</target>
+
+	<target name="vagrant-up">
+		<antcall target="vagrant-exec">
+			<param name="command" value="up"/>
+		</antcall>
+	</target>
+
+	<target name="vagrant-destroy">
+		<antcall target="vagrant-exec">
+			<param name="command" value="destroy"/>
+		</antcall>
+	</target>
+
+	<target name="vagrant-status">
+		<antcall target="vagrant-exec">
+			<param name="command" value="status"/>
+		</antcall>
+	</target>
+
+	<target name="vagrant-exec">
+		<exec dir="${ANSIBLE_HOME}" executable="vagrant">
+    		<arg value="${command}"/>
+  		</exec>
+	</target>
+
+</project>

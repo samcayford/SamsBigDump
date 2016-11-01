@@ -14,6 +14,7 @@
   <import file="iis.build.xml"/>
   <import file="tomcat.build.xml"/>
   <import file="database.build.xml"/>
+  <import file="ansible.build.xml"/>
   
   <path id="basedir.path">
     <pathelement location="${basedir}"/>
